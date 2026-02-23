@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Region } from 'react-native-maps';
+import MapView, { Circle, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 
 const DEFAULT_REGION: Region = {
@@ -111,7 +111,7 @@ export default function App() {
         >
           {locations.length > 0 &&
             locations.map((loc, index) => (
-              <MapView.Circle
+              <Circle
                 key={index}
                 center={loc}
                 radius={3}
