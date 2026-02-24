@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
 const DEFAULT_REGION: Region = {
   latitude: 35.6812,
@@ -12,7 +12,7 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.01,
 };
 
-const STORAGE_KEY = '@gps_sessions';
+const GPS_SESSIONS_FILE = `${FileSystem.documentDirectory}gps_sessions.json`;
 
 export type GpsSession = {
   id: string;
@@ -39,8 +39,9 @@ export default function App() {
 
   const loadSavedSessions = useCallback(async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
+      const fileInfo = await FileSystem.getInfoAsync(GPS_SESSIONS_FILE);
+      if (fileInfo.exists) {
+        const stored = await FileSystem.readAsStringAsync(GPS_SESSIONS_FILE);
         const parsed = JSON.parse(stored) as GpsSession[];
         setSavedSessions(parsed);
       }
@@ -70,10 +71,14 @@ export default function App() {
       startTimeRef.current = null;
 
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        const sessions: GpsSession[] = stored ? JSON.parse(stored) : [];
+        let sessions: GpsSession[] = [];
+        const fileInfo = await FileSystem.getInfoAsync(GPS_SESSIONS_FILE);
+        if (fileInfo.exists) {
+          const stored = await FileSystem.readAsStringAsync(GPS_SESSIONS_FILE);
+          sessions = JSON.parse(stored);
+        }
         sessions.push(session);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+        await FileSystem.writeAsStringAsync(GPS_SESSIONS_FILE, JSON.stringify(sessions));
         setSavedSessions(sessions);
       } catch (e) {
         console.error('Failed to save session:', e);
