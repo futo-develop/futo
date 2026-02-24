@@ -3,12 +3,22 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEFAULT_REGION: Region = {
   latitude: 35.6812,
   longitude: 139.7671,
   latitudeDelta: 0.01,
   longitudeDelta: 0.01,
+};
+
+const STORAGE_KEY = '@gps_sessions';
+
+export type GpsSession = {
+  id: string;
+  startTime: number;
+  endTime: number;
+  coordinates: { latitude: number; longitude: number }[];
 };
 
 export default function App() {
@@ -22,16 +32,56 @@ export default function App() {
   >([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+  const [savedSessions, setSavedSessions] = useState<GpsSession[]>([]);
   const subscriptionRef = useRef<Location.LocationSubscription | null>(null);
   const mapRef = useRef<MapView | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
-  const stopTracking = useCallback(() => {
+  const loadSavedSessions = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as GpsSession[];
+        setSavedSessions(parsed);
+      }
+    } catch (e) {
+      console.error('Failed to load saved sessions:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSavedSessions();
+  }, [loadSavedSessions]);
+
+  const stopTracking = useCallback(async () => {
     if (subscriptionRef.current) {
       subscriptionRef.current.remove();
       subscriptionRef.current = null;
     }
     setIsRecording(false);
-  }, []);
+
+    if (locations.length > 0 && startTimeRef.current !== null) {
+      const session: GpsSession = {
+        id: `session_${Date.now()}`,
+        startTime: startTimeRef.current,
+        endTime: Date.now(),
+        coordinates: [...locations],
+      };
+      startTimeRef.current = null;
+
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        const sessions: GpsSession[] = stored ? JSON.parse(stored) : [];
+        sessions.push(session);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+        setSavedSessions(sessions);
+      } catch (e) {
+        console.error('Failed to save session:', e);
+      }
+    }
+    setLocations([]);
+    setCurrentLocation(null);
+  }, [locations]);
 
   const startTracking = useCallback(async () => {
     if (isRecording) {
@@ -59,6 +109,7 @@ export default function App() {
     setCurrentLocation({ latitude, longitude });
     setRegion(initialRegion);
     setLocations([{ latitude, longitude }]);
+    startTimeRef.current = Date.now();
     setIsRecording(true);
 
     subscriptionRef.current = await Location.watchPositionAsync(
@@ -126,6 +177,7 @@ export default function App() {
         <Text style={styles.title}>GPS記録</Text>
         <Text style={styles.status}>ステータス: {statusText}</Text>
         <Text style={styles.count}>記録数: {locations.length}</Text>
+        <Text style={styles.count}>保存セッション数: {savedSessions.length}</Text>
         {currentLocation && (
           <Text style={styles.coords}>
             {currentLocation.latitude.toFixed(6)},{' '}
