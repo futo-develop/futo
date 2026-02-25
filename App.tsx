@@ -1,9 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Circle, Region } from 'react-native-maps';
+import MapView, { Circle, Polyline, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import * as FileSystem from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEFAULT_REGION: Region = {
   latitude: 35.6812,
@@ -12,7 +12,7 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.01,
 };
 
-const GPS_SESSIONS_FILE = `${FileSystem.documentDirectory}gps_sessions.json`;
+const GPS_SESSIONS_KEY = 'gps_sessions';
 
 export type GpsSession = {
   id: string;
@@ -39,9 +39,8 @@ export default function App() {
 
   const loadSavedSessions = useCallback(async () => {
     try {
-      const fileInfo = await FileSystem.getInfoAsync(GPS_SESSIONS_FILE);
-      if (fileInfo.exists) {
-        const stored = await FileSystem.readAsStringAsync(GPS_SESSIONS_FILE);
+      const stored = await AsyncStorage.getItem(GPS_SESSIONS_KEY);
+      if (stored) {
         const parsed = JSON.parse(stored) as GpsSession[];
         setSavedSessions(parsed);
       }
@@ -71,14 +70,13 @@ export default function App() {
       startTimeRef.current = null;
 
       try {
-        let sessions: GpsSession[] = [];
-        const fileInfo = await FileSystem.getInfoAsync(GPS_SESSIONS_FILE);
-        if (fileInfo.exists) {
-          const stored = await FileSystem.readAsStringAsync(GPS_SESSIONS_FILE);
-          sessions = JSON.parse(stored);
-        }
+        const stored = await AsyncStorage.getItem(GPS_SESSIONS_KEY);
+        const sessions: GpsSession[] = stored ? JSON.parse(stored) : [];
         sessions.push(session);
-        await FileSystem.writeAsStringAsync(GPS_SESSIONS_FILE, JSON.stringify(sessions));
+        await AsyncStorage.setItem(
+          GPS_SESSIONS_KEY,
+          JSON.stringify(sessions)
+        );
         setSavedSessions(sessions);
       } catch (e) {
         console.error('Failed to save session:', e);
@@ -165,6 +163,17 @@ export default function App() {
           showsMyLocationButton={false}
           followsUserLocation={isRecording}
         >
+          {savedSessions.map(
+            (session) =>
+              session.coordinates.length >= 2 && (
+                <Polyline
+                  key={session.id}
+                  coordinates={session.coordinates}
+                  strokeColor="#FF0000"
+                  strokeWidth={5}
+                />
+              )
+          )}
           {locations.length > 0 &&
             locations.map((loc, index) => (
               <Circle
