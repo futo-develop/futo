@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Circle, Polyline, Region } from 'react-native-maps';
+import MapView, { Circle, Polygon, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -14,12 +14,52 @@ const DEFAULT_REGION: Region = {
 
 const GPS_SESSIONS_KEY = 'gps_sessions';
 
+const GRID_SIZE_METERS = 100;
+
+const METERS_PER_DEGREE_LAT = 111320;
+const getMetersPerDegreeLon = (lat: number) =>
+  111320 * Math.cos((lat * Math.PI) / 180);
+
 export type GpsSession = {
   id: string;
   startTime: number;
   endTime: number;
   coordinates: { latitude: number; longitude: number }[];
 };
+
+function coordToGridId(lat: number, lon: number): string {
+  const latMeters = lat * METERS_PER_DEGREE_LAT;
+  const lonMeters = lon * getMetersPerDegreeLon(lat);
+  const gi = Math.floor(latMeters / GRID_SIZE_METERS);
+  const gj = Math.floor(lonMeters / GRID_SIZE_METERS);
+  return `${gi}_${gj}`;
+}
+
+function gridIdToCorners(
+  gridId: string
+): { latitude: number; longitude: number }[] {
+  const [gi, gj] = gridId.split('_').map(Number);
+  const latMin = (gi * GRID_SIZE_METERS) / METERS_PER_DEGREE_LAT;
+  const latMax = ((gi + 1) * GRID_SIZE_METERS) / METERS_PER_DEGREE_LAT;
+  const latCenter = (latMin + latMax) / 2;
+  const metersPerDegLon = getMetersPerDegreeLon(latCenter);
+  const lonMin = (gj * GRID_SIZE_METERS) / metersPerDegLon;
+  const lonMax = ((gj + 1) * GRID_SIZE_METERS) / metersPerDegLon;
+  return [
+    { latitude: latMin, longitude: lonMin },
+    { latitude: latMin, longitude: lonMax },
+    { latitude: latMax, longitude: lonMax },
+    { latitude: latMax, longitude: lonMin },
+    { latitude: latMin, longitude: lonMin },
+  ];
+}
+
+function getColorForCount(count: number): string {
+  if (count >= 10) return '#FF0000';
+  if (count >= 5) return '#FFA500';
+  if (count >= 2) return '#FFD700';
+  return '#90EE90';
+}
 
 export default function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -52,6 +92,26 @@ export default function App() {
   useEffect(() => {
     loadSavedSessions();
   }, [loadSavedSessions]);
+
+  const gridCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const addSessionGrids = (coords: { latitude: number; longitude: number }[]) => {
+      const grids = new Set<string>();
+      for (const c of coords) {
+        grids.add(coordToGridId(c.latitude, c.longitude));
+      }
+      for (const g of grids) {
+        counts[g] = (counts[g] ?? 0) + 1;
+      }
+    };
+    for (const session of savedSessions) {
+      addSessionGrids(session.coordinates);
+    }
+    if (locations.length > 0) {
+      addSessionGrids(locations);
+    }
+    return counts;
+  }, [savedSessions, locations]);
 
   const stopTracking = useCallback(async () => {
     if (subscriptionRef.current) {
@@ -163,17 +223,15 @@ export default function App() {
           showsMyLocationButton={false}
           followsUserLocation={isRecording}
         >
-          {savedSessions.map(
-            (session) =>
-              session.coordinates.length >= 2 && (
-                <Polyline
-                  key={session.id}
-                  coordinates={session.coordinates}
-                  strokeColor="#FF0000"
-                  strokeWidth={5}
-                />
-              )
-          )}
+          {Object.entries(gridCounts).map(([gridId, count]) => (
+            <Polygon
+              key={gridId}
+              coordinates={gridIdToCorners(gridId)}
+              fillColor={getColorForCount(count)}
+              strokeColor="rgba(0,0,0,0.2)"
+              strokeWidth={1}
+            />
+          ))}
           {locations.length > 0 &&
             locations.map((loc, index) => (
               <Circle
@@ -192,6 +250,7 @@ export default function App() {
         <Text style={styles.status}>ステータス: {statusText}</Text>
         <Text style={styles.count}>記録数: {locations.length}</Text>
         <Text style={styles.count}>保存セッション数: {savedSessions.length}</Text>
+        <Text style={styles.count}>通過グリッド数: {Object.keys(gridCounts).length}</Text>
         {currentLocation && (
           <Text style={styles.coords}>
             {currentLocation.latitude.toFixed(6)},{' '}
@@ -201,6 +260,21 @@ export default function App() {
         {errorMessage ? (
           <Text style={styles.error}>{errorMessage}</Text>
         ) : null}
+        <View style={styles.legend}>
+          <Text style={styles.legendTitle}>通過回数:</Text>
+          <View style={styles.legendRow}>
+            <View style={[styles.legendColor, { backgroundColor: '#90EE90' }]} />
+            <Text style={styles.legendText}>1回</Text>
+            <View style={[styles.legendColor, { backgroundColor: '#FFD700' }]} />
+            <Text style={styles.legendText}>2-4回</Text>
+          </View>
+          <View style={styles.legendRow}>
+            <View style={[styles.legendColor, { backgroundColor: '#FFA500' }]} />
+            <Text style={styles.legendText}>5-9回</Text>
+            <View style={[styles.legendColor, { backgroundColor: '#FF0000' }]} />
+            <Text style={styles.legendText}>10回以上</Text>
+          </View>
+        </View>
         <View style={styles.buttonRow}>
           <Pressable
             accessibilityRole="button"
@@ -271,6 +345,29 @@ const styles = StyleSheet.create({
     color: '#c0392b',
     marginBottom: 12,
     textAlign: 'center',
+  },
+  legend: {
+    marginBottom: 12,
+  },
+  legendTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    marginRight: 4,
+    borderRadius: 2,
+  },
+  legendText: {
+    fontSize: 12,
+    marginRight: 16,
   },
   buttonRow: {
     flexDirection: 'row',
