@@ -1,3 +1,6 @@
+// ============================================================
+// インポート
+// ============================================================
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -5,6 +8,11 @@ import MapView, { Circle, Polygon, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// ============================================================
+// 定数
+// ============================================================
+
+/** 地図の初期表示範囲（東京） */
 const DEFAULT_REGION: Region = {
   latitude: 35.6812,
   longitude: 139.7671,
@@ -12,14 +20,24 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.01,
 };
 
+/** AsyncStorage にセッションを保存するキー */
 const GPS_SESSIONS_KEY = 'gps_sessions';
 
+/** グリッドの1辺の長さ（メートル） */
 const GRID_SIZE_METERS = 100;
 
+/** 緯度1度あたりの距離（メートル） */
 const METERS_PER_DEGREE_LAT = 111320;
+
+/** 経度1度あたりの距離（緯度により変化） */
 const getMetersPerDegreeLon = (lat: number) =>
   111320 * Math.cos((lat * Math.PI) / 180);
 
+// ============================================================
+// 型定義
+// ============================================================
+
+/** GPS記録セッションの型 */
 export type GpsSession = {
   id: string;
   startTime: number;
@@ -27,6 +45,14 @@ export type GpsSession = {
   coordinates: { latitude: number; longitude: number }[];
 };
 
+// ============================================================
+// グリッド関連のヘルパー関数
+// ============================================================
+
+/**
+ * 座標をグリッドIDに変換する
+ * 地図を100m×100mのマス目に区切り、そのマスの識別子を返す
+ */
 function coordToGridId(lat: number, lon: number): string {
   const latMeters = lat * METERS_PER_DEGREE_LAT;
   const lonMeters = lon * getMetersPerDegreeLon(lat);
@@ -35,6 +61,10 @@ function coordToGridId(lat: number, lon: number): string {
   return `${gi}_${gj}`;
 }
 
+/**
+ * グリッドIDから四隅の座標を取得する
+ * Polygon描画用に5点（始点で閉じる）を返す
+ */
 function gridIdToCorners(
   gridId: string
 ): { latitude: number; longitude: number }[] {
@@ -54,6 +84,10 @@ function gridIdToCorners(
   ];
 }
 
+/**
+ * 通過回数に応じた色を返す
+ * 1回:緑 / 2-4回:黄 / 5-9回:オレンジ / 10回以上:赤
+ */
 function getColorForCount(count: number): string {
   if (count >= 10) return '#FF0000';
   if (count >= 5) return '#FFA500';
@@ -61,7 +95,14 @@ function getColorForCount(count: number): string {
   return '#90EE90';
 }
 
+// ============================================================
+// メインコンポーネント
+// ============================================================
+
 export default function App() {
+  // ------------------------------------------------------------
+  // 状態
+  // ------------------------------------------------------------
   const [isRecording, setIsRecording] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{
     latitude: number;
@@ -77,6 +118,9 @@ export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
+  // ------------------------------------------------------------
+  // セッションの読み込み
+  // ------------------------------------------------------------
   const loadSavedSessions = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(GPS_SESSIONS_KEY);
@@ -93,6 +137,10 @@ export default function App() {
     loadSavedSessions();
   }, [loadSavedSessions]);
 
+  // ------------------------------------------------------------
+  // グリッド通過回数の算出
+  // 全セッション + 記録中ルートから、各グリッドの通過回数を集計
+  // ------------------------------------------------------------
   const gridCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     const addSessionGrids = (coords: { latitude: number; longitude: number }[]) => {
@@ -113,6 +161,9 @@ export default function App() {
     return counts;
   }, [savedSessions, locations]);
 
+  // ------------------------------------------------------------
+  // 記録停止
+  // ------------------------------------------------------------
   const stopTracking = useCallback(async () => {
     if (subscriptionRef.current) {
       subscriptionRef.current.remove();
@@ -146,6 +197,9 @@ export default function App() {
     setCurrentLocation(null);
   }, [locations]);
 
+  // ------------------------------------------------------------
+  // 記録開始
+  // ------------------------------------------------------------
   const startTracking = useCallback(async () => {
     if (isRecording) {
       return;
@@ -198,6 +252,9 @@ export default function App() {
     );
   }, [isRecording]);
 
+  // ------------------------------------------------------------
+  // アンマウント時のクリーンアップ
+  // ------------------------------------------------------------
   useEffect(() => {
     return () => {
       if (subscriptionRef.current) {
@@ -209,8 +266,12 @@ export default function App() {
 
   const statusText = isRecording ? '記録中' : '停止中';
 
+  // ------------------------------------------------------------
+  // レンダリング
+  // ------------------------------------------------------------
   return (
     <View style={styles.container}>
+      {/* 地図エリア */}
       <View style={styles.mapContainer}>
         <MapView
           ref={(ref) => {
@@ -223,6 +284,7 @@ export default function App() {
           showsMyLocationButton={false}
           followsUserLocation={isRecording}
         >
+          {/* 通過回数に応じたグリッド（色付きマス目） */}
           {Object.entries(gridCounts).map(([gridId, count]) => (
             <Polygon
               key={gridId}
@@ -232,6 +294,7 @@ export default function App() {
               strokeWidth={1}
             />
           ))}
+          {/* 記録中のルート（青い丸） */}
           {locations.length > 0 &&
             locations.map((loc, index) => (
               <Circle
@@ -245,6 +308,8 @@ export default function App() {
             ))}
         </MapView>
       </View>
+
+      {/* コントロールパネル */}
       <View style={styles.controlPanel}>
         <Text style={styles.title}>GPS記録</Text>
         <Text style={styles.status}>ステータス: {statusText}</Text>
@@ -260,6 +325,7 @@ export default function App() {
         {errorMessage ? (
           <Text style={styles.error}>{errorMessage}</Text>
         ) : null}
+        {/* 通過回数と色の凡例 */}
         <View style={styles.legend}>
           <Text style={styles.legendTitle}>通過回数:</Text>
           <View style={styles.legendRow}>
@@ -275,6 +341,7 @@ export default function App() {
             <Text style={styles.legendText}>10回以上</Text>
           </View>
         </View>
+        {/* スタート/ストップボタン */}
         <View style={styles.buttonRow}>
           <Pressable
             accessibilityRole="button"
@@ -299,6 +366,9 @@ export default function App() {
   );
 }
 
+// ============================================================
+// スタイル
+// ============================================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
