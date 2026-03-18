@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Polygon, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ResultScreen from './src/screens/ResultScreen';
 
 // ============================================================
 // 定数
@@ -104,6 +105,9 @@ export default function App() {
   // 状態
   // ------------------------------------------------------------
   const [isRecording, setIsRecording] = useState(false);
+  const [isShowingResult, setIsShowingResult] = useState(false);
+  const [resultElapsedSeconds, setResultElapsedSeconds] = useState(0);
+  const [resultGridCount, setResultGridCount] = useState(0);
   const [currentLocation, setCurrentLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -172,6 +176,13 @@ export default function App() {
     setIsRecording(false);
 
     if (locations.length > 0 && startTimeRef.current !== null) {
+      // 結果画面用の集計（今回の走行のみ）
+      const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      const grids = new Set<string>();
+      for (const c of locations) {
+        grids.add(coordToGridId(c.latitude, c.longitude));
+      }
+
       const session: GpsSession = {
         id: `session_${Date.now()}`,
         startTime: startTimeRef.current,
@@ -192,6 +203,11 @@ export default function App() {
       } catch (e) {
         console.error('Failed to save session:', e);
       }
+
+      // 保存処理の成否に関わらず、結果画面には遷移する
+      setResultElapsedSeconds(elapsedSeconds);
+      setResultGridCount(grids.size);
+      setIsShowingResult(true);
     }
     setLocations([]);
     setCurrentLocation(null);
@@ -269,6 +285,18 @@ export default function App() {
   // ------------------------------------------------------------
   // レンダリング
   // ------------------------------------------------------------
+  if (isShowingResult) {
+    return (
+      <ResultScreen
+        elapsedSeconds={resultElapsedSeconds}
+        gridCount={resultGridCount}
+        onBackToMap={() => {
+          setIsShowingResult(false);
+        }}
+      />
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* 地図エリア */}
