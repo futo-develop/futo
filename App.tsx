@@ -108,6 +108,12 @@ export default function App() {
   const [isShowingResult, setIsShowingResult] = useState(false);
   const [resultElapsedSeconds, setResultElapsedSeconds] = useState(0);
   const [resultGridCount, setResultGridCount] = useState(0);
+  const [resultCoordinates, setResultCoordinates] = useState<
+    { latitude: number; longitude: number }[]
+  >([]);
+  const [resultPreviousGridIds, setResultPreviousGridIds] = useState<string[]>(
+    []
+  );
   const [currentLocation, setCurrentLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -182,6 +188,12 @@ export default function App() {
       for (const c of locations) {
         grids.add(coordToGridId(c.latitude, c.longitude));
       }
+      const previousGrids = new Set<string>();
+      for (const session of savedSessions) {
+        for (const c of session.coordinates) {
+          previousGrids.add(coordToGridId(c.latitude, c.longitude));
+        }
+      }
 
       const session: GpsSession = {
         id: `session_${Date.now()}`,
@@ -207,11 +219,13 @@ export default function App() {
       // 保存処理の成否に関わらず、結果画面には遷移する
       setResultElapsedSeconds(elapsedSeconds);
       setResultGridCount(grids.size);
+      setResultCoordinates([...locations]);
+      setResultPreviousGridIds(Array.from(previousGrids));
       setIsShowingResult(true);
     }
     setLocations([]);
     setCurrentLocation(null);
-  }, [locations]);
+  }, [locations, savedSessions]);
 
   // ------------------------------------------------------------
   // 記録開始
@@ -289,7 +303,8 @@ export default function App() {
     return (
       <ResultScreen
         elapsedSeconds={resultElapsedSeconds}
-        gridCount={resultGridCount}
+        coordinates={resultCoordinates}
+        previousGridIds={resultPreviousGridIds}
         onBackToMap={() => {
           setIsShowingResult(false);
         }}

@@ -5,9 +5,9 @@ type ResultScreenProps = {
   /** 経過時間（秒） */
   elapsedSeconds: number;
   /** 今回のGPS座標（距離計算やグリッド計算に使用） */
-  coordinates: { latitude: number; longitude: number }[];
+  coordinates?: { latitude: number; longitude: number }[];
   /** 過去に通過したグリッドID一覧（新規開拓数の計算に使用） */
-  previousGridIds: string[];
+  previousGridIds?: string[];
   /** 地図画面に戻る */
   onBackToMap: () => void;
 };
@@ -52,8 +52,8 @@ const distanceMeters = (
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 };
 
-const calcDistanceKm = (coords: { latitude: number; longitude: number }[]) => {
-  if (coords.length < 2) return 0;
+const calcDistanceKm = (coords?: { latitude: number; longitude: number }[]) => {
+  if (!coords || coords.length < 2) return 0;
   let meters = 0;
   for (let i = 1; i < coords.length; i += 1) {
     meters += distanceMeters(coords[i - 1], coords[i]);
@@ -67,13 +67,16 @@ export default function ResultScreen({
   previousGridIds,
   onBackToMap,
 }: ResultScreenProps) {
-  const distanceKm = calcDistanceKm(coordinates);
+  const safeCoordinates = coordinates ?? [];
+  const safePreviousGridIds = previousGridIds ?? [];
+
+  const distanceKm = calcDistanceKm(safeCoordinates);
 
   const currentGridSet = new Set<string>();
-  for (const c of coordinates) {
+  for (const c of safeCoordinates) {
     currentGridSet.add(coordToGridId(c.latitude, c.longitude));
   }
-  const previousGridSet = new Set(previousGridIds);
+  const previousGridSet = new Set(safePreviousGridIds);
   let newGridCount = 0;
   for (const g of currentGridSet) {
     if (!previousGridSet.has(g)) {
