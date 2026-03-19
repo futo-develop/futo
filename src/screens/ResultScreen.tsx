@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type ResultScreenProps = {
   /** 経過時間（秒） */
@@ -67,6 +67,16 @@ export default function ResultScreen({
   previousGridIds,
   onBackToMap,
 }: ResultScreenProps) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
   const safeCoordinates = coordinates ?? [];
   const safePreviousGridIds = previousGridIds ?? [];
 
@@ -85,7 +95,7 @@ export default function ResultScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Text style={styles.message}>
         お疲れさま！{'\n'}今日も走れた自分、えらい！
       </Text>
@@ -117,7 +127,7 @@ export default function ResultScreen({
       >
         <Text style={styles.buttonText}>地図に戻る</Text>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
