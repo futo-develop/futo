@@ -108,6 +108,7 @@ export default function App() {
   const [isShowingResult, setIsShowingResult] = useState(false);
   const [resultElapsedSeconds, setResultElapsedSeconds] = useState(0);
   const [resultGridCount, setResultGridCount] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState('00:00:00');
   const [resultCoordinates, setResultCoordinates] = useState<
     { latitude: number; longitude: number }[]
   >([]);
@@ -294,6 +295,26 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (isRecording && startTimeRef.current) {
+      interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTimeRef.current!) / 1000);
+        const h = Math.floor(elapsed / 3600);
+        const m = Math.floor((elapsed % 3600) / 60);
+        const s = elapsed % 60;
+        setElapsedTime(
+          `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+        );
+      }, 1000);
+    } else {
+      setElapsedTime('00:00:00');
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording]);
+
   const statusText = isRecording ? '記録中' : '停止中';
 
   // ------------------------------------------------------------
@@ -360,14 +381,7 @@ export default function App() {
 
         {isRecording && (
           <Text style={styles.elapsedText}>
-            {(() => {
-              if (!startTimeRef.current) return '00:00:00';
-              const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-              const h = Math.floor(elapsed / 3600);
-              const m = Math.floor((elapsed % 3600) / 60);
-              const s = elapsed % 60;
-              return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-            })()}
+            {elapsedTime}
           </Text>
         )}
 
