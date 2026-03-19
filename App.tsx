@@ -354,20 +354,23 @@ export default function App() {
 
       {/* コントロールパネル */}
       <View style={styles.controlPanel}>
-        <Text style={styles.title}>GPS記録</Text>
-        <Text style={styles.status}>ステータス: {statusText}</Text>
-        <Text style={styles.count}>記録数: {locations.length}</Text>
-        <Text style={styles.count}>保存セッション数: {savedSessions.length}</Text>
-        <Text style={styles.count}>通過グリッド数: {Object.keys(gridCounts).length}</Text>
-        {currentLocation && (
-          <Text style={styles.coords}>
-            {currentLocation.latitude.toFixed(6)},{' '}
-            {currentLocation.longitude.toFixed(6)}
+        <Text style={styles.statusText}>
+          {isRecording ? '🔴 記録中' : '⚪ 停止中'}
+        </Text>
+
+        {isRecording && (
+          <Text style={styles.elapsedText}>
+            {(() => {
+              if (!startTimeRef.current) return '00:00:00';
+              const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+              const h = Math.floor(elapsed / 3600);
+              const m = Math.floor((elapsed % 3600) / 60);
+              const s = elapsed % 60;
+              return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            })()}
           </Text>
         )}
-        {errorMessage ? (
-          <Text style={styles.error}>{errorMessage}</Text>
-        ) : null}
+
         {/* 通過回数と色の凡例 */}
         <View style={styles.legend}>
           <Text style={styles.legendTitle}>通過回数:</Text>
@@ -384,6 +387,7 @@ export default function App() {
             <Text style={styles.legendText}>10回以上</Text>
           </View>
         </View>
+
         {/* スタート/ストップボタン */}
         <View style={styles.buttonRow}>
           <Pressable
@@ -433,6 +437,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#eee',
+  },
+  statusText: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  elapsedText: {
+    fontSize: 48,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontVariant: ['tabular-nums'],
   },
   title: {
     fontSize: 22,
