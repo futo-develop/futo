@@ -67,6 +67,15 @@ export default function ResultScreen({
   previousGridIds,
   onBackToMap,
 }: ResultScreenProps) {
+  const messages = [
+    'お疲れさま！\n今日も走れた自分、えらい！',
+    'すごい！\n一歩一歩が地図を育てる！',
+    '今日も出た！\nそれだけで100点！',
+    'また道が育ったね！\nコツコツが一番強い！',
+    '走り切った！\n自分を褒めてあげて！',
+  ];
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -97,7 +106,7 @@ export default function ResultScreen({
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Text style={styles.message}>
-        お疲れさま！{'\n'}今日も走れた自分、えらい！
+        {randomMessage}
       </Text>
 
       <View style={styles.section}>
