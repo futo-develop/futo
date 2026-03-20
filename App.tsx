@@ -8,7 +8,10 @@ import MapView, { Circle, Polygon, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultScreen from './src/screens/ResultScreen';
+import StatsScreen from './src/screens/StatsScreen';
 
 // ============================================================
 // 定数
@@ -100,6 +103,8 @@ function getColorForCount(count: number): string {
 // ============================================================
 // メインコンポーネント
 // ============================================================
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   // ------------------------------------------------------------
@@ -361,8 +366,6 @@ export default function App() {
     };
   }, [isRecording]);
 
-  const statusText = isRecording ? '記録中' : '停止中';
-
   // ------------------------------------------------------------
   // レンダリング
   // ------------------------------------------------------------
@@ -372,104 +375,125 @@ export default function App() {
         elapsedSeconds={resultElapsedSeconds}
         coordinates={resultCoordinates}
         previousGridIds={resultPreviousGridIds}
-        onBackToMap={() => {
-          setIsShowingResult(false);
-        }}
+        onBackToMap={() => setIsShowingResult(false)}
       />
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* 地図エリア */}
-      <View style={styles.mapContainer}>
-        <MapView
-          ref={(ref) => {
-            mapRef.current = ref;
-          }}
-          style={styles.map}
-          region={region}
-          onRegionChangeComplete={setRegion}
-          showsUserLocation={isRecording}
-          showsMyLocationButton={false}
-          followsUserLocation={isRecording}
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { paddingBottom: 8, height: 60 },
+          tabBarLabelStyle: { fontSize: 12 },
+        }}
+      >
+        <Tab.Screen
+          name="地図"
+          options={{ tabBarLabel: '🗺️ 地図' }}
         >
-          {/* 通過回数に応じたグリッド（色付きマス目） */}
-          {Object.entries(gridCounts).map(([gridId, count]) => (
-            <Polygon
-              key={gridId}
-              coordinates={gridIdToCorners(gridId)}
-              fillColor={getColorForCount(count)}
-              strokeColor="rgba(0,0,0,0.2)"
-              strokeWidth={1}
-            />
-          ))}
-          {/* 記録中のルート（青い丸） */}
-          {locations.length > 0 &&
-            locations.map((loc, index) => (
-              <Circle
-                key={index}
-                center={loc}
-                radius={3}
-                fillColor="rgba(46, 134, 222, 0.5)"
-                strokeColor="#2e86de"
-                strokeWidth={1}
-              />
-            ))}
-        </MapView>
-      </View>
+          {() => (
+            <View style={styles.container}>
+              {/* 地図エリア */}
+              <View style={styles.mapContainer}>
+                <MapView
+                  ref={(ref) => {
+                    mapRef.current = ref;
+                  }}
+                  style={styles.map}
+                  region={region}
+                  onRegionChangeComplete={setRegion}
+                  showsUserLocation={isRecording}
+                  showsMyLocationButton={false}
+                  followsUserLocation={isRecording}
+                >
+                  {/* 通過回数に応じたグリッド（色付きマス目） */}
+                  {Object.entries(gridCounts).map(([gridId, count]) => (
+                    <Polygon
+                      key={gridId}
+                      coordinates={gridIdToCorners(gridId)}
+                      fillColor={getColorForCount(count)}
+                      strokeColor="rgba(0,0,0,0.2)"
+                      strokeWidth={1}
+                    />
+                  ))}
+                  {/* 記録中のルート（青い丸） */}
+                  {locations.length > 0 &&
+                    locations.map((loc, index) => (
+                      <Circle
+                        key={index}
+                        center={loc}
+                        radius={3}
+                        fillColor="rgba(46, 134, 222, 0.5)"
+                        strokeColor="#2e86de"
+                        strokeWidth={1}
+                      />
+                    ))}
+                </MapView>
+              </View>
 
-      {/* コントロールパネル */}
-      <View style={styles.controlPanel}>
-        <Text style={styles.statusText}>
-          {isRecording ? '🔴 記録中' : '⚪ 停止中'}
-        </Text>
+              {/* コントロールパネル */}
+              <View style={styles.controlPanel}>
+                <Text style={styles.statusText}>
+                  {isRecording ? '🔴 記録中' : '⚪ 停止中'}
+                </Text>
 
-        {isRecording && (
-          <Text style={styles.elapsedText}>
-            {elapsedTime}
-          </Text>
-        )}
+                {isRecording && (
+                  <Text style={styles.elapsedText}>
+                    {elapsedTime}
+                  </Text>
+                )}
 
-        {/* 通過回数と色の凡例 */}
-        <View style={styles.legend}>
-          <Text style={styles.legendTitle}>通過回数:</Text>
-          <View style={styles.legendRow}>
-            <View style={[styles.legendColor, { backgroundColor: '#90EE90' }]} />
-            <Text style={styles.legendText}>1回</Text>
-            <View style={[styles.legendColor, { backgroundColor: '#FFD700' }]} />
-            <Text style={styles.legendText}>2-4回</Text>
-          </View>
-          <View style={styles.legendRow}>
-            <View style={[styles.legendColor, { backgroundColor: '#FFA500' }]} />
-            <Text style={styles.legendText}>5-9回</Text>
-            <View style={[styles.legendColor, { backgroundColor: '#FF0000' }]} />
-            <Text style={styles.legendText}>10回以上</Text>
-          </View>
-        </View>
+                {/* 通過回数と色の凡例 */}
+                <View style={styles.legend}>
+                  <Text style={styles.legendTitle}>通過回数:</Text>
+                  <View style={styles.legendRow}>
+                    <View style={[styles.legendColor, { backgroundColor: '#90EE90' }]} />
+                    <Text style={styles.legendText}>1回</Text>
+                    <View style={[styles.legendColor, { backgroundColor: '#FFD700' }]} />
+                    <Text style={styles.legendText}>2-4回</Text>
+                  </View>
+                  <View style={styles.legendRow}>
+                    <View style={[styles.legendColor, { backgroundColor: '#FFA500' }]} />
+                    <Text style={styles.legendText}>5-9回</Text>
+                    <View style={[styles.legendColor, { backgroundColor: '#FF0000' }]} />
+                    <Text style={styles.legendText}>10回以上</Text>
+                  </View>
+                </View>
 
-        {/* スタート/ストップボタン */}
-        <View style={styles.buttonRow}>
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.button, styles.startButton, isRecording && styles.buttonDisabled]}
-            onPress={startTracking}
-            disabled={isRecording}
-          >
-            <Text style={styles.buttonText}>スタート</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.button, styles.stopButton, !isRecording && styles.buttonDisabled]}
-            onPress={stopTracking}
-            disabled={!isRecording}
-          >
-            <Text style={styles.buttonText}>ストップ</Text>
-          </Pressable>
-        </View>
-      </View>
-      <StatusBar style="auto" />
-    </View>
+                {/* スタート/ストップボタン */}
+                <View style={styles.buttonRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    style={[styles.button, styles.startButton, isRecording && styles.buttonDisabled]}
+                    onPress={startTracking}
+                    disabled={isRecording}
+                  >
+                    <Text style={styles.buttonText}>スタート</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    style={[styles.button, styles.stopButton, !isRecording && styles.buttonDisabled]}
+                    onPress={stopTracking}
+                    disabled={!isRecording}
+                  >
+                    <Text style={styles.buttonText}>ストップ</Text>
+                  </Pressable>
+                </View>
+              </View>
+              <StatusBar style="auto" />
+            </View>
+          )}
+        </Tab.Screen>
+        <Tab.Screen
+          name="統計"
+          options={{ tabBarLabel: '📊 統計' }}
+        >
+          {() => <StatsScreen sessions={savedSessions} />}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
 
