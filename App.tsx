@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Polygon, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ResultScreen from './src/screens/ResultScreen';
 
@@ -146,6 +147,13 @@ export default function App() {
 
   useEffect(() => {
     loadSavedSessions();
+    // 通知の許可をリクエスト
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('通知の許可が得られませんでした');
+      }
+    })();
   }, [loadSavedSessions]);
 
   // ------------------------------------------------------------
