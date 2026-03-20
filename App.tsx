@@ -153,6 +153,44 @@ export default function App() {
       if (status !== 'granted') {
         console.log('通知の許可が得られませんでした');
       }
+
+      // 3日間走っていない場合の通知をスケジュール
+      const scheduleReminder = async (lastRunTime: number) => {
+        await Notifications.cancelAllScheduledNotificationsAsync();
+        const daysSinceLastRun = (Date.now() - lastRunTime) / (1000 * 60 * 60 * 24);
+        if (daysSinceLastRun >= 3) {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: '久しぶりですね！',
+              body: '道が待っています。今日も少しだけ走りませんか？🏃',
+            },
+            trigger: null, // すぐに通知
+          });
+        } else {
+          // 3日後に通知をスケジュール
+          const triggerDate = new Date(lastRunTime + 3 * 24 * 60 * 60 * 1000);
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: '久しぶりですね！',
+              body: '道が待っています。今日も少しだけ走りませんか？🏃',
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: triggerDate,
+            },
+          });
+        }
+      };
+
+      // 保存済みセッションから最終走行日を取得して通知をセット
+      const stored = await AsyncStorage.getItem(GPS_SESSIONS_KEY);
+      if (stored) {
+        const sessions: GpsSession[] = JSON.parse(stored);
+        if (sessions.length > 0) {
+          const lastSession = sessions[sessions.length - 1];
+          await scheduleReminder(lastSession.endTime);
+        }
+      }
     })();
   }, [loadSavedSessions]);
 
