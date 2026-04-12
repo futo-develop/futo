@@ -12,6 +12,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultScreen from './src/screens/ResultScreen';
 import StatsScreen from './src/screens/StatsScreen';
+import AchievementsScreen from './src/screens/AchievementsScreen';
 
 // ============================================================
 // 定数
@@ -491,6 +492,12 @@ export default function App() {
           options={{ tabBarLabel: '📊 統計' }}
         >
           {() => <StatsScreen sessions={savedSessions} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="称号"
+          options={{ tabBarLabel: '🏅 称号' }}
+        >
+          {() => <AchievementsScreen sessions={savedSessions} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
