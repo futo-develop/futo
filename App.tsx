@@ -160,9 +160,33 @@ export default function App() {
         console.log('通知の許可が得られませんでした');
       }
 
+      // デイリーミッションの通知をスケジュール
+      const directions = ['北', '南', '東', '西'];
+      const randomDir = directions[Math.floor(Math.random() * directions.length)];
+
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      // 毎朝7時に通知
+      const now = new Date();
+      const trigger = new Date();
+      trigger.setHours(7, 0, 0, 0);
+      if (trigger <= now) {
+        trigger.setDate(trigger.getDate() + 1);
+      }
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '今日のミッション🗺️',
+          body: `${randomDir}方向に500m開拓せよ！`,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: trigger,
+        },
+      });
+
       // 3日間走っていない場合の通知をスケジュール
       const scheduleReminder = async (lastRunTime: number) => {
-        await Notifications.cancelAllScheduledNotificationsAsync();
         const daysSinceLastRun = (Date.now() - lastRunTime) / (1000 * 60 * 60 * 24);
         if (daysSinceLastRun >= 3) {
           await Notifications.scheduleNotificationAsync({
