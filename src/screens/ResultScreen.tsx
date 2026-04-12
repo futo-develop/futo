@@ -8,7 +8,7 @@ type ResultScreenProps = {
   coordinates?: { latitude: number; longitude: number }[];
   /** 過去に通過したグリッドID一覧（新規開拓数の計算に使用） */
   previousGridIds?: string[];
-  /** 地図画面に戻る */
+  /** onBackToMap */
   onBackToMap: () => void;
 };
 
@@ -69,7 +69,7 @@ export default function ResultScreen({
 }: ResultScreenProps) {
   const messages = [
     'お疲れさま！\n今日も走れた自分、えらい！',
-    'すごい！\n一歩一歩が地図を育てる！',
+    '\u3059\u3054\u3044\uFF01\n\u4E00\u6B69\u4E00\u6B69\u304C\u5730\u56F3\u3092\u80B2\u3066\u308B\uFF01',
     '今日も出た！\nそれだけで100点！',
     'また道が育ったね！\nコツコツが一番強い！',
     '走り切った！\n自分を褒めてあげて！',
@@ -77,14 +77,47 @@ export default function ResultScreen({
   const randomMessage = messages[Math.floor(Math.random() * messages.length)];
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const fadeAnim2 = useRef(new Animated.Value(0)).current;
+  const fadeAnim3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // 1段��目：メッセージフェードイン
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 800,
+      duration: 600,
       useNativeDriver: true,
     }).start();
-  }, [fadeAnim]);
+
+    //�目：開拓結果がスライドで出る（1秒後）
+    const t1 = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim2, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 1000);
+
+    const t2 = setTimeout(() => {
+      Animated.timing(fadeAnim3, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }, 2000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   const safeCoordinates = coordinates ?? [];
   const safePreviousGridIds = previousGridIds ?? [];
@@ -104,39 +137,58 @@ export default function ResultScreen({
   }
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <Text style={styles.message}>
-        {randomMessage}
-      </Text>
+    <View style={styles.container}>
 
-      <View style={styles.section}>
-        <Text style={styles.label}>経過時間</Text>
-        <Text style={styles.value}>{formatElapsedTime(elapsedSeconds)}</Text>
-      </View>
+      {/* 1段��目：励ましメッセージ */}
+      <Animated.View style={{ opacity: fadeAnim }}>
+        <Text style={styles.message}>{randomMessage}</Text>
+      </Animated.View>
 
-      <View style={styles.section}>
-        <Text style={styles.label}>今回通過したグリッド数</Text>
-        <Text style={styles.value}>{currentGridSet.size}</Text>
-      </View>
+      {/* 2段��目：開拓結果 */}
+      <Animated.View style={{
+        opacity: fadeAnim2,
+        transform: [{ translateY: slideAnim }],
+        alignItems: 'center',
+      }}>
+        <View style={styles.section}>
+          <Text style={styles.label}>経過時間</Text>
+          <Text style={styles.value}>{formatElapsedTime(elapsedSeconds)}</Text>
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.label}>今回の距離</Text>
+          <Text style={styles.value}>{distanceKm.toFixed(2)}km</Text>
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.label}>新規開拓</Text>
+          <Text style={styles.value}>
+            {newGridCount}マス {'\uD83D\uDDFA\uFE0F'}
+          </Text>
+        </View>
+      </Animated.View>
 
-      <View style={styles.section}>
-        <Text style={styles.label}>今回の距離</Text>
-        <Text style={styles.value}>{distanceKm.toFixed(2)}km</Text>
-      </View>
+      {/* 3段��目：称号 */}
+      <Animated.View style={{ opacity: fadeAnim3, alignItems: 'center' }}>
+        <Text style={styles.titleLabel}>
+          {'\uD83C\uDFC5 \u73FE\u5728\u306E\u79F0\u53F7'}
+        </Text>
+        <Text style={styles.titleValue}>
+          {newGridCount >= 1
+            ? '\uD83D\uDDFA\uFE0F \u958B\u62D3\u8005'
+            : '\uD83C\uDF31 \u306F\u3058\u3081\u306E\u4E00\u6B69'}
+        </Text>
+      </Animated.View>
 
-      <View style={styles.section}>
-        <Text style={styles.label}>新規開拓</Text>
-        <Text style={styles.value}>{newGridCount}マス</Text>
-      </View>
+      <Animated.View style={{ opacity: fadeAnim2 }}>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.button}
+          onPress={onBackToMap}
+        >
+          <Text style={styles.buttonText}>{'\u5730\u56F3\u306B\u623B\u308B'}</Text>
+        </Pressable>
+      </Animated.View>
 
-      <Pressable
-        accessibilityRole="button"
-        style={styles.button}
-        onPress={onBackToMap}
-      >
-        <Text style={styles.buttonText}>地図に戻る</Text>
-      </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -179,10 +231,20 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     backgroundColor: '#FFFFFF',
   },
+  titleLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 24,
+    marginBottom: 4,
+  },
+  titleValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
   buttonText: {
     color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
 });
-
