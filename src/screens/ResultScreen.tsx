@@ -8,6 +8,8 @@ type ResultScreenProps = {
   coordinates?: { latitude: number; longitude: number }[];
   /** 過去に通過したグリッドID一覧（新規開拓数の計算に使用） */
   previousGridIds?: string[];
+  missionDirection?: string | null;
+  missionAchieved?: boolean;
   /** onBackToMap */
   onBackToMap: () => void;
 };
@@ -65,6 +67,8 @@ export default function ResultScreen({
   elapsedSeconds,
   coordinates,
   previousGridIds,
+  missionDirection,
+  missionAchieved,
   onBackToMap,
 }: ResultScreenProps) {
   const messages = [
@@ -176,6 +180,23 @@ export default function ResultScreen({
             ? '\uD83D\uDDFA\uFE0F \u958B\u62D3\u8005'
             : '\uD83C\uDF31 \u306F\u3058\u3081\u306E\u4E00\u6B69'}
         </Text>
+        {missionDirection && (
+          <View style={{ alignItems: 'center', marginTop: 16 }}>
+            <Text style={styles.titleLabel}>今日のミッション</Text>
+            <Text style={styles.titleValue}>
+              {missionDirection}方向に500m開拓
+            </Text>
+            {missionAchieved ? (
+              <Text style={{ fontSize: 20, color: '#27ae60', fontWeight: '700', marginTop: 8 }}>
+                ミッション達成！🎉
+              </Text>
+            ) : (
+              <Text style={{ fontSize: 16, color: '#aaa', marginTop: 8 }}>
+                未達成（また明日！）
+              </Text>
+            )}
+          </View>
+        )}
       </Animated.View>
 
       <Animated.View style={{ opacity: fadeAnim2 }}>

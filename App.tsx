@@ -135,6 +135,8 @@ export default function App() {
   const subscriptionRef = useRef<Location.LocationSubscription | null>(null);
   const mapRef = useRef<MapView | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const [missionDirection, setMissionDirection] = useState<string | null>(null);
+  const [missionAchieved, setMissionAchieved] = useState(false);
 
   // ------------------------------------------------------------
   // セッションの読み込み
@@ -163,6 +165,7 @@ export default function App() {
       // デイリーミッションの通知をスケジュール
       const directions = ['北', '南', '東', '西'];
       const randomDir = directions[Math.floor(Math.random() * directions.length)];
+      setMissionDirection(randomDir);
 
       await Notifications.cancelAllScheduledNotificationsAsync();
 
@@ -298,11 +301,30 @@ export default function App() {
       setResultGridCount(grids.size);
       setResultCoordinates([...locations]);
       setResultPreviousGridIds(Array.from(previousGrids));
+
+      // ミッション達成判定
+      if (locations.length >= 2 && missionDirection) {
+        const start = locations[0];
+        const end = locations[locations.length - 1];
+        const latDiff = end.latitude - start.latitude;
+        const lonDiff = end.longitude - start.longitude;
+        const distanceM = Math.sqrt(
+          Math.pow(latDiff * 111320, 2) +
+          Math.pow(lonDiff * 111320 * Math.cos(start.latitude * Math.PI / 180), 2)
+        );
+        let achieved = false;
+        if (missionDirection === '北' && latDiff > 0 && distanceM >= 500) achieved = true;
+        if (missionDirection === '南' && latDiff < 0 && distanceM >= 500) achieved = true;
+        if (missionDirection === '東' && lonDiff > 0 && distanceM >= 500) achieved = true;
+        if (missionDirection === '西' && lonDiff < 0 && distanceM >= 500) achieved = true;
+        setMissionAchieved(achieved);
+      }
+
       setIsShowingResult(true);
     }
     setLocations([]);
     setCurrentLocation(null);
-  }, [locations, savedSessions]);
+  }, [locations, savedSessions, missionDirection]);
 
   // ------------------------------------------------------------
   // 記録開始
@@ -400,6 +422,8 @@ export default function App() {
         elapsedSeconds={resultElapsedSeconds}
         coordinates={resultCoordinates}
         previousGridIds={resultPreviousGridIds}
+        missionDirection={missionDirection}
+        missionAchieved={missionAchieved}
         onBackToMap={() => setIsShowingResult(false)}
       />
     );
