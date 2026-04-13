@@ -13,6 +13,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultScreen from './src/screens/ResultScreen';
 import StatsScreen from './src/screens/StatsScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 
 // ============================================================
 // 定数
@@ -140,6 +141,7 @@ export default function App() {
   const [frontierMarkers, setFrontierMarkers] = useState<
     { latitude: number; longitude: number }[]
   >([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ------------------------------------------------------------
   // セッションの読み込み
@@ -157,9 +159,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadSavedSessions();
-    // 通知の許可をリクエスト
     (async () => {
+      await loadSavedSessions();
+      // オンボーディングの確認
+      const onboardingDone = await AsyncStorage.getItem('onboarding_done');
+      if (!onboardingDone) {
+        setShowOnboarding(true);
+      }
+      // 通知の許可をリクエスト
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
         console.log('通知の許可が得られませんでした');
@@ -462,6 +469,17 @@ export default function App() {
   // ------------------------------------------------------------
   // レンダリング
   // ------------------------------------------------------------
+  if (showOnboarding) {
+    return (
+      <OnboardingScreen
+        onFinish={async () => {
+          await AsyncStorage.setItem('onboarding_done', 'true');
+          setShowOnboarding(false);
+        }}
+      />
+    );
+  }
+
   if (isShowingResult) {
     return (
       <ResultScreen
