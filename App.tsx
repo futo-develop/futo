@@ -4,7 +4,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Circle, Polygon, Region } from 'react-native-maps';
+import MapView, { Circle, Marker, Polygon, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -137,6 +137,9 @@ export default function App() {
   const startTimeRef = useRef<number | null>(null);
   const [missionDirection, setMissionDirection] = useState<string | null>(null);
   const [missionAchieved, setMissionAchieved] = useState(false);
+  const [frontierMarkers, setFrontierMarkers] = useState<
+    { latitude: number; longitude: number }[]
+  >([]);
 
   // ------------------------------------------------------------
   // セッションの読み込み
@@ -250,6 +253,49 @@ export default function App() {
     }
     return counts;
   }, [savedSessions, locations]);
+
+  useEffect(() => {
+    const visitedGrids = new Set(Object.keys(gridCounts));
+    if (visitedGrids.size === 0) {
+      setFrontierMarkers([]);
+      return;
+    }
+
+    // 隣接する未訪問グリッドを探す
+    const frontier: string[] = [];
+    const directions = [
+      [1, 0], [-1, 0], [0, 1], [0, -1],
+    ];
+
+    for (const gridId of visitedGrids) {
+      const [gi, gj] = gridId.split('_').map(Number);
+      for (const [di, dj] of directions) {
+        const neighborId = `${gi + di}_${gj + dj}`;
+        if (!visitedGrids.has(neighborId)) {
+          frontier.push(neighborId);
+        }
+      }
+    }
+
+    if (frontier.length === 0) {
+      setFrontierMarkers([]);
+      return;
+    }
+
+    // ランダムに3〜5個選ぶ
+    const shuffled = frontier.sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(5, shuffled.length));
+
+    // グリッドIDを座標に変換
+    const markers = selected.map((gridId) => {
+      const [gi, gj] = gridId.split('_').map(Number);
+      const lat = (gi * GRID_SIZE_METERS) / METERS_PER_DEGREE_LAT;
+      const lon = (gj * GRID_SIZE_METERS) / (111320 * Math.cos(lat * Math.PI / 180));
+      return { latitude: lat, longitude: lon };
+    });
+
+    setFrontierMarkers(markers);
+  }, [gridCounts]);
 
   // ------------------------------------------------------------
   // 記録停止
@@ -466,6 +512,16 @@ export default function App() {
                       strokeColor="rgba(0,0,0,0.2)"
                       strokeWidth={1}
                     />
+                  ))}
+                  {frontierMarkers.map((marker, index) => (
+                    <Marker
+                      key={`frontier_${index}`}
+                      coordinate={marker}
+                      title="未開拓エリア"
+                      description="ここを目指して走ろう！"
+                    >
+                      <Text style={{ fontSize: 24 }}>🚩</Text>
+                    </Marker>
                   ))}
                   {/* 記録中のルート（青い丸） */}
                   {locations.length > 0 &&
