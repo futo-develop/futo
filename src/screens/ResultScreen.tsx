@@ -10,6 +10,7 @@ type ResultScreenProps = {
   previousGridIds?: string[];
   missionDirection?: string | null;
   missionAchieved?: boolean;
+  currentAchievement?: string;
   /** onBackToMap */
   onBackToMap: () => void;
 };
@@ -69,6 +70,7 @@ export default function ResultScreen({
   previousGridIds,
   missionDirection,
   missionAchieved,
+  currentAchievement,
   onBackToMap,
 }: ResultScreenProps) {
   const messages = [
@@ -176,9 +178,8 @@ export default function ResultScreen({
           {'\uD83C\uDFC5 \u73FE\u5728\u306E\u79F0\u53F7'}
         </Text>
         <Text style={styles.titleValue}>
-          {newGridCount >= 1
-            ? '\uD83D\uDDFA\uFE0F \u958B\u62D3\u8005'
-            : '\uD83C\uDF31 \u306F\u3058\u3081\u306E\u4E00\u6B69'}
+          {currentAchievement ??
+            '\u{1F331} \u306f\u3058\u3081\u306e\u4e00\u6b69'}
         </Text>
         {missionDirection && (
           <View style={{ alignItems: 'center', marginTop: 16 }}>

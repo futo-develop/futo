@@ -124,6 +124,9 @@ export default function App() {
   const [resultPreviousGridIds, setResultPreviousGridIds] = useState<string[]>(
     []
   );
+  const [resultAchievement, setResultAchievement] = useState(
+    '\u{1F331} \u306f\u3058\u3081\u306e\u4e00\u6b69'
+  );
   const [currentLocation, setCurrentLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -349,10 +352,11 @@ export default function App() {
       };
       startTimeRef.current = null;
 
+      const stored = await AsyncStorage.getItem(GPS_SESSIONS_KEY);
+      const sessions: GpsSession[] = stored ? JSON.parse(stored) : [];
+      sessions.push(session);
+
       try {
-        const stored = await AsyncStorage.getItem(GPS_SESSIONS_KEY);
-        const sessions: GpsSession[] = stored ? JSON.parse(stored) : [];
-        sessions.push(session);
         await AsyncStorage.setItem(
           GPS_SESSIONS_KEY,
           JSON.stringify(sessions)
@@ -386,6 +390,14 @@ export default function App() {
         setMissionAchieved(achieved);
       }
 
+      const totalRunCount = sessions.length;
+      let currentAchievement = '\u{1F331} \u306f\u3058\u3081\u306e\u4e00\u6b69';
+      if (totalRunCount >= 50) currentAchievement = '\u{1F451} \u5730\u56f3\u306e\u738b';
+      else if (totalRunCount >= 20) currentAchievement = '\u{1F31F} \u5730\u5143\u30a6\u30a9\u30fc\u30ab\u30fc';
+      else if (totalRunCount >= 10) currentAchievement = '\u{1F5FA}\uFE0F \u958b\u62d3\u8005';
+      else if (totalRunCount >= 5) currentAchievement = '\u{1F3C3} \u30e9\u30f3\u30ca\u30fc';
+
+      setResultAchievement(currentAchievement);
       setIsShowingResult(true);
     }
     setLocations([]);
@@ -501,6 +513,7 @@ export default function App() {
         previousGridIds={resultPreviousGridIds}
         missionDirection={missionDirection}
         missionAchieved={missionAchieved}
+        currentAchievement={resultAchievement}
         onBackToMap={() => setIsShowingResult(false)}
       />
     );
