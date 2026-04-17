@@ -38,9 +38,6 @@ export default function StatsScreen({ sessions, totalGridCount }: StatsScreenPro
   const progress = nextTitle
     ? (totalRuns - prevCondition) / (nextCondition - prevCondition)
     : 1;
-  const barLength = 20;
-  const filled = Math.round(progress * barLength);
-  const empty = barLength - filled;
 
   return (
     <ScrollView style={styles.container}>
@@ -64,10 +61,9 @@ export default function StatsScreen({ sessions, totalGridCount }: StatsScreenPro
       <View style={styles.card}>
         <Text style={styles.label}>現在の称号</Text>
         <Text style={styles.titleText}>{currentTitle.title}</Text>
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressBar}>
-            {'█'.repeat(filled)}{'░'.repeat(empty)}
-          </Text>
+        {/* プログレスバー */}
+        <View style={styles.barBackground}>
+          <View style={[styles.barFill, { width: `${Math.round(progress * 100)}%` }]} />
         </View>
         {nextTitle ? (
           <Text style={styles.nextTitle}>
@@ -115,13 +111,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 12,
   },
-  progressContainer: {
+  barBackground: {
+    width: '100%',
+    height: 12,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
     marginBottom: 8,
+    overflow: 'hidden',
   },
-  progressBar: {
-    fontSize: 18,
-    color: '#27ae60',
-    letterSpacing: 2,
+  barFill: {
+    height: 12,
+    backgroundColor: '#27ae60',
+    borderRadius: 6,
   },
   nextTitle: {
     fontSize: 13,
