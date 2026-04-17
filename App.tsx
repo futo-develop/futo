@@ -32,7 +32,7 @@ const DEFAULT_REGION: Region = {
 const GPS_SESSIONS_KEY = 'gps_sessions';
 
 /** グリッドの1辺の長さ（メートル） */
-const GRID_SIZE_METERS = 100;
+const GRID_SIZE_METERS = 30;
 
 /** 緯度1度あたりの距離（メートル） */
 const METERS_PER_DEGREE_LAT = 111320;
@@ -59,7 +59,7 @@ export type GpsSession = {
 
 /**
  * 座標をグリッドIDに変換する
- * 地図を100m×100mのマス目に区切り、そのマスの識別子を返す
+ * 地図を30m×30mのマス目に区切り、そのマスの識別子を返す
  */
 function coordToGridId(lat: number, lon: number): string {
   const latMeters = lat * METERS_PER_DEGREE_LAT;
@@ -162,6 +162,15 @@ export default function App() {
   useEffect(() => {
     (async () => {
       await loadSavedSessions();
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      setRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      });
       // オンボーディングの確認
       const onboardingDone = await AsyncStorage.getItem('onboarding_done');
       if (!onboardingDone) {
@@ -400,7 +409,7 @@ export default function App() {
     }
 
     const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.High,
+      accuracy: Location.Accuracy.Balanced,
     });
     const { latitude, longitude } = location.coords;
     const initialRegion: Region = {
