@@ -626,7 +626,12 @@ export default function App() {
           name="統計"
           options={{ tabBarLabel: '📊 統計' }}
         >
-          {() => <StatsScreen sessions={savedSessions} />}
+          {() => (
+            <StatsScreen
+              sessions={savedSessions}
+              totalGridCount={Object.keys(gridCounts).length}
+            />
+          )}
         </Tab.Screen>
         <Tab.Screen
           name="称号"
