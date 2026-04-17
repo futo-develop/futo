@@ -581,22 +581,23 @@ export default function App() {
                   </Text>
                 )}
 
-                {/* 通過回数と色の凡例 */}
-                <View style={styles.legend}>
-                  <Text style={styles.legendTitle}>通過回数:</Text>
-                  <View style={styles.legendRow}>
-                    <View style={[styles.legendColor, { backgroundColor: '#90EE90' }]} />
-                    <Text style={styles.legendText}>1回</Text>
-                    <View style={[styles.legendColor, { backgroundColor: '#FFD700' }]} />
-                    <Text style={styles.legendText}>2-4回</Text>
+                {isRecording && (
+                  <View style={styles.legend}>
+                    <Text style={styles.legendTitle}>通過回数:</Text>
+                    <View style={styles.legendRow}>
+                      <View style={[styles.legendColor, { backgroundColor: '#90EE90' }]} />
+                      <Text style={styles.legendText}>1回</Text>
+                      <View style={[styles.legendColor, { backgroundColor: '#FFD700' }]} />
+                      <Text style={styles.legendText}>2-4回</Text>
+                    </View>
+                    <View style={styles.legendRow}>
+                      <View style={[styles.legendColor, { backgroundColor: '#FFA500' }]} />
+                      <Text style={styles.legendText}>5-9回</Text>
+                      <View style={[styles.legendColor, { backgroundColor: '#FF0000' }]} />
+                      <Text style={styles.legendText}>10回以上</Text>
+                    </View>
                   </View>
-                  <View style={styles.legendRow}>
-                    <View style={[styles.legendColor, { backgroundColor: '#FFA500' }]} />
-                    <Text style={styles.legendText}>5-9回</Text>
-                    <View style={[styles.legendColor, { backgroundColor: '#FF0000' }]} />
-                    <Text style={styles.legendText}>10回以上</Text>
-                  </View>
-                </View>
+                )}
 
                 {/* スタート/ストップボタン */}
                 <View style={styles.buttonRow}>
