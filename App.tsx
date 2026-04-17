@@ -14,6 +14,7 @@ import ResultScreen from './src/screens/ResultScreen';
 import StatsScreen from './src/screens/StatsScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 // ============================================================
 // 定数
@@ -186,6 +187,9 @@ export default function App() {
       if (trigger <= now) {
         trigger.setDate(trigger.getDate() + 1);
       }
+
+      const notifEnabled = await AsyncStorage.getItem('notifications_enabled');
+      if (notifEnabled === 'false') return;
 
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -620,6 +624,12 @@ export default function App() {
           options={{ tabBarLabel: '🏅 称号' }}
         >
           {() => <AchievementsScreen sessions={savedSessions} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="設定"
+          options={{ tabBarLabel: '⚙️ 設定' }}
+        >
+          {() => <SettingsScreen />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
