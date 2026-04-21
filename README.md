@@ -134,4 +134,4 @@ Expo Goアプリで表示されるQRコードをスキャンしてください�
 
 ## 👤 開発者
 
-[@YOUR_TWITTER_HANDLE](https://twitter.com/YOUR_TWITTER_HANDLE)
+[@2CizWF6Aew50670](https://twitter.com/2CizWF6Aew50670)
