@@ -128,7 +128,7 @@ export default function ResultScreen({
   const safeCoordinates = coordinates ?? [];
   const safePreviousGridIds = previousGridIds ?? [];
 
-  const distanceKm = calcDistanceKm(safeCoordinates);
+  calcDistanceKm(safeCoordinates);
 
   const currentGridSet = new Set<string>();
   for (const c of safeCoordinates) {
@@ -159,10 +159,6 @@ export default function ResultScreen({
         <View style={styles.section}>
           <Text style={styles.label}>経過時間</Text>
           <Text style={styles.value}>{formatElapsedTime(elapsedSeconds)}</Text>
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.label}>今回の距離</Text>
-          <Text style={styles.value}>{distanceKm.toFixed(2)}km</Text>
         </View>
         <View style={styles.section}>
           <Text style={styles.label}>新規開拓</Text>
