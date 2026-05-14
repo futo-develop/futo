@@ -13,9 +13,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-  "bundleIdentifier": "com.futodevelop.futo",
-  "supportsTablet": true
-},
+      "bundleIdentifier": "com.futodevelop.futo",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "走行ルートを地図上に記録するために、アプリ使用中の位置情報を取得します。",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "バックグラウンドでも走行ルートを記録するために、常に位置情報を取得します。",
+        "NSLocationAlwaysUsageDescription": "バックグラウンドでも走行ルートを記録するために、常に位置情報を取得します。"
+      }
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -26,6 +32,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "78f73812-fdd7-4af0-bdcc-081fa6223fd7"
+      }
     }
   }
 }
