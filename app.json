@@ -17,9 +17,9 @@
       "supportsTablet": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSLocationWhenInUseUsageDescription": "走行ルートを地図上に記録するために、アプリ使用中の位置情報を取得します。",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "バックグラウンドでも走行ルートを記録するために、常に位置情報を取得します。",
-        "NSLocationAlwaysUsageDescription": "バックグラウンドでも走行ルートを記録するために、常に位置情報を取得します。"
+        "NSLocationWhenInUseUsageDescription": "走行中の位置情報を取得し、走ったルートを地図上に線で表示します。取得した位置情報は、よく通る道ほど色が濃くなるヒートマップの作成に使用され、端末内に保存されます。",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "走行中に画面を閉じても走行ルートを記録できるよう、バックグラウンドでも位置情報を取得します。取得した位置情報は走行ルートの地図表示とヒートマップの作成に使用され、端末内にのみ保存されます。",
+        "NSLocationAlwaysUsageDescription": "バックグラウンドでも走行ルートを記録するために位置情報を取得します。取得した位置情報は走行ルートの地図表示とヒートマップの作成に使用され、端末内にのみ保存されます。"
       }
     },
     "android": {
@@ -37,8 +37,8 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "走行ルートを地図上に記録するために、位置情報を取得します。バックグラウンドでも記録を継続します。",
-          "locationWhenInUsePermission": "走行ルートを地図上に記録するために、アプリ使用中の位置情報を取得します。",
+          "locationAlwaysAndWhenInUsePermission": "走行中に画面を閉じてもルートを記録できるよう、バックグラウンドでも位置情報を取得します。取得した情報は走行ルートの表示とヒートマップ作成に使用され、端末内にのみ保存されます。",
+          "locationWhenInUsePermission": "走行中の位置情報を取得し、走ったルートを地図上に表示します。取得した位置情報はヒートマップの作成に使用され、端末内に保存されます。",
           "isIosBackgroundLocationEnabled": true
         }
       ]
