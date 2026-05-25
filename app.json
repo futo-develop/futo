@@ -33,6 +33,16 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "走行ルートを地図上に記録するために、位置情報を取得します。バックグラウンドでも記録を継続します。",
+          "locationWhenInUsePermission": "走行ルートを地図上に記録するために、アプリ使用中の位置情報を取得します。",
+          "isIosBackgroundLocationEnabled": true
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "78f73812-fdd7-4af0-bdcc-081fa6223fd7"
