@@ -94,7 +94,7 @@ type GpsSession = {
 ## 🚀 セットアップ
 
 ```bash
-git clone https://github.com/futo-develop/futo.git
+git clone https://github.com/takumi-suzuki/futo.git
 cd futo
 npm install
 npx expo start
@@ -214,4 +214,4 @@ futoは以下の情報を収集します。
 ### お問い合わせ
 プライバシーポリシーに関するご質問は、
 GitHubのIssueよりお問い合わせください。
-https://github.com/futo-develop/futo/issues
+https://github.com/takumi-suzuki/futo/issues
